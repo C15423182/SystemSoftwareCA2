@@ -19,70 +19,75 @@ Client
 #include <sys/wait.h> 
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include<pthread.h> //for threading , link with lpthread
+
+
+#define PORT 9999
+#define TRUE 1
+#define FALSE 0
 
 //main
 int main (int argc, char *argv[])
 {
-	int SID;
-	struct sockaddr_in  server;
-	char client_msg[500], server_msg[500];
+    int SID;
+    struct sockaddr_in  server;
+    char client_msg[500], server_msg[500];
 
-	SID = socket(AF_INET, SOCK_STREAM, 0);
+    SID = socket(AF_INET, SOCK_STREAM, 0);
 
-	if (SID == -1)
-	{
-		puts("Error Client Socket Creation\n");
-		exit(1);
-	}
-	else
-	{
-		puts("Client Socket Creation Complete\n");
-	}
-
-	//prepare socket setup
-    server.sin_family = AF_INET;
-    server.sin_addr.s_addr = inet_addr("127.0.0.1");
-    server.sin_port = htons(9999);
-
-    if (connect(SID, (struct socketaddr *)&server, sizeof(server)) < 0)
+    if (SID == -1)
     {
-    	puts("Connection failed");
-    	exit(1);
+        puts("Error Client Socket Creation\n");
+        exit(1);
     }
     else
     {
-    	puts("Connection made to server");
-    	puts("Enter \"exit\" to exit connection\n");
+        puts("Client Socket Creation Complete\n");
+    }
+
+    //prepare socket setup
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server.sin_port = htons(PORT);
+
+    if (connect(SID, (struct socketaddr *)&server, sizeof(server)) < 0)
+    {
+        puts("Connection failed");
+        exit(1);
+    }
+    else
+    {
+        puts("Connection made to server");
+        puts("Enter \"exit\" to exit connection\n");
     }
 
 
     while(1)
     {
-    	printf("Client >> ");
-    	scanf("%s", client_msg);
-    	int msg_size = strlen(client_msg);
+        printf("To Server >> ");
+        scanf("%s", client_msg);
+        int msg_size = strlen(client_msg);
 
-    	if (client_msg == "exit" || client_msg == "EXIT")
-    	{
-    		puts("Exiting Connection\n");
-    		exit(0);
-    		break;
-    	}
-    	//send msg
-    	if ( send(SID, client_msg, msg_size, 0) < 0)
-    	{
-    		puts("Sending Failed\n");
-    		exit(1);
-    	}
+        if (strcmp(client_msg,"exit") == 0 || strcmp(client_msg,"EXIT") == 0 )
+        {
+            puts("Exiting Connection\n");
+            exit(0);
+            break;
+        }
+        
+        //send msg
+        if ( send(SID, client_msg, msg_size, 0) < 0)
+        {
+            puts("Sending Failed\n");
+            exit(1);
+        }
 
-    	//recieve msg
-    	if ( recv( SID, server_msg, 500, 0) < 0)
-    	{
-    		puts("Recieve Error/nBreaking Connection");
-    		break;
-    	}
-
-    	printf("Server >>  %s", server_msg);
+        //recieve msg
+        if ( recv( SID, server_msg, 500, 0) < 0)
+        {
+            puts("Recieve Error\nBreaking Connection");
+            break;
+        }
     }
 
     close(SID);
