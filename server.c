@@ -27,7 +27,12 @@ Server
 #define MAXCLIENTS 5
 
 //connection handler thread
-void *connection_handler( void *);
+void *connection_handler( void *socket_des)
+{
+    int sock = *(int*)socket_des;
+    int readSize;
+    char *msg, client_msg[500];
+}
 
 
 //main
@@ -102,7 +107,7 @@ int main (int argc, char *argv[])
 
         if (strcmp(msg,"exit") == 0 || strcmp(msg,"EXIT") == 0  )
         {
-            puts("Exiting Connection...\n");
+            printf("Exiting Connection...\n");
             break;
         }
     }
