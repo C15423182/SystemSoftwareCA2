@@ -3,8 +3,9 @@ Cian Sincliar
 C15423182
 System Software Assignment 2
 Multithreaded Server / Client program
-Client
+Client Side
 */
+
 //imports
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,17 +22,22 @@ Client
 #include <arpa/inet.h>
 #include<pthread.h> //for threading , link with lpthread
 
+//static vars
 #define IP "127.0.0.1"
 #define PORT 9999
 #define TRUE 1
 #define FALSE 0
 
+//global vars
 int SID;
 char FILE_SOURCE[200];
 char DIR_DEST[200];
 char client_msg[500];
 char server_msg[500];
 struct sockaddr_in  server;
+
+//functions
+int SocketCreate();
 
 //main
 int main (int argc, char *argv[])
@@ -49,6 +55,7 @@ int main (int argc, char *argv[])
     else
     {
         printf("failed\n");
+        exit(EXIT_FAILURE);
     }
 
     SID = SocketCreate();
@@ -62,7 +69,7 @@ int main (int argc, char *argv[])
         if (strcmp(client_msg,"exit") == 0 || strcmp(client_msg,"EXIT") == 0 )
         {
             puts("Exiting Connection\n");
-            exit(0);
+            exit(EXIT_SUCCESS);
             break;
         }
 
@@ -70,7 +77,7 @@ int main (int argc, char *argv[])
         if ( send(SID, client_msg, msg_size, 0) < 0)
         {
             puts("Sending Failed\n");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 
         //recieve msg
@@ -82,9 +89,10 @@ int main (int argc, char *argv[])
     }
 
     close(SID);
-    exit(0);
+    exit(EXIT_SUCCESS);;
 }
 
+//function to create client socket
 int SocketCreate()
 {
     SID = socket(AF_INET, SOCK_STREAM, 0);
@@ -92,7 +100,7 @@ int SocketCreate()
     if (SID == -1)
     {
         puts("Error Client Socket Creation\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     else
     {
@@ -107,7 +115,7 @@ int SocketCreate()
     if (connect(SID, (struct socketaddr *)&server, sizeof(server)) < 0)
     {
         puts("Connection failed");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     else
     {

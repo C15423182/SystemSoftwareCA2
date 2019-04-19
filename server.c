@@ -19,29 +19,27 @@ Server
 #include <sys/wait.h> 
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include<pthread.h> //for threading , link with lpthread
+#include <pthread.h> //for threading , link with lpthread
 
 #define PORT 9999
 #define TRUE 1
 #define FALSE 0
 #define MAXCLIENTS 5
 
-//connection handler thread
-void *connection_handler( void *socket_des)
-{
-    int sock = *(int*)socket_des;
-    int readSize;
-    char *msg, client_msg[500];
-}
+int connectionSize;
+int socket_des;
+struct sockaddr_in  server;
+struct sockaddr_in client;
 
+void AcceptMulClients();
+void *ThreadClient(void *ptr);
 
 //main
 int main (int argc, char *argv[])
 {
     //server vars
-    int socket_des, c_socket,connectionSize, readSize;
+    int c_socket, readSize;
     // s = socket_des, cs = c_socket, connectionSize = connSize, readSize = readsize
-    struct sockaddr_in  server, client;
 
     char msg[500];
 
@@ -80,50 +78,67 @@ int main (int argc, char *argv[])
     //accept connections
     puts("Waiting for connections.....\n");
 
-    connectionSize = sizeof(struct  sockaddr_in);
-
-    // c_socket = accept( socket_des, (struct socketaddr *)&client, (socklen_t*)&connectionSize);
-    c_socket = accept(socket_des, (struct socketaddr *)&client, (socklen_t*)&connectionSize);
-
-    if (c_socket < 0)
-    {
-        perror("Cant make connection\n");
-        exit(1);
-    }
-    else
-    {
-        puts("Connetion from client accepted\n");
-    }
-
     while(TRUE)
     {
-        memset(msg, 0, 500);
-        //readsize = read( c_socket, msg, 500);
-        readSize = recv( c_socket, msg, 2000, 0);
-        printf("From Client >> %s\n", msg);
-        char msg_rec[] = "Recieved";
-        int len_msg = strlen(msg_rec);
-        write(c_socket, msg_rec, len_msg);
-
-        if (strcmp(msg,"exit") == 0 || strcmp(msg,"EXIT") == 0  )
-        {
-            printf("Exiting Connection...\n");
-            break;
-        }
-    }
-
-    if ( readSize == 0)
-    {
-        puts("Client Disconnected");
-        fflush(stdout);
-    }
-    else if (readSize == -1)
-    {
-        perror("Read Error");
+        AcceptMulClients();
     }
 
     puts("Server Closing...\n");
     close(socket_des);
     close(c_socket);
     exit(0);
+}
+
+//function to accept multiple clients and set up sockets
+void AcceptMulClients()
+{
+    int client_socket;
+
+    listen(socket_des, MAXCLIENTS);
+    connectionSize = sizeof(struct  sockaddr_in);
+
+    client_socket = accept(socket_des, (struct socketaddr *)&client, (socklen_t*)&connectionSize);
+
+
+    if (client_socket < 0)
+    {
+        perror("Cant make connection\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    pthread_t client_thread;
+    printf("Connection from Client %d accepted\n", client_socket);
+    int *c = malloc(sizeof(*c));
+    *c = client_socket;
+    int threadReturn = pthread_create(&client_thread, NULL, ThreadClient, (void*) c);
+
+    if(threadReturn)
+    {
+        printf("Failed to create client thread: %dn", threadReturn);
+    }
+}
+
+//thread per client functionality 
+void *ThreadClient(void *client_socket)
+{
+    int readSize;
+    char msg[500];
+    int CID = *((int*) client_socket);
+    printf("Client %d\n", CID );
+    memset(msg, 0, 500);
+
+    while(TRUE)
+    {
+        readSize = recv( CID, msg, 2000, 0);
+        printf("From Client >> %s\n", msg);
+        char msg_rec[] = "Recieved";
+        int len_msg = strlen(msg_rec);
+        write(CID, msg_rec, len_msg);
+
+        if (strcmp(msg,"exit") == 0 || strcmp(msg,"EXIT") == 0  )
+        {
+            printf("Exiting Connection...\n");
+            exit(EXIT_SUCCESS);
+        }
+    }
 }
